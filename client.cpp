@@ -80,7 +80,11 @@ int main(void)
     std::cin >> port;
     net::initializeWinSock();
     SOCKET sock = createSocketAndConnect(address.c_str(), port.c_str());
-    (void)sock;
+    const char data[16] = "Please, work...";
+    int bytesSent;
+    net::Send(sock, data, 16, bytesSent);
+    shutdown(sock, SD_BOTH);
+    closesocket(sock);
     net::cleanupWinSock();
     return 0;
 }

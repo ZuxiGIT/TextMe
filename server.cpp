@@ -10,7 +10,7 @@
 #define STR(x) #x
 #define MYTEXT(x)  "[Server] %s [%d] " TEXT(x), __FUNCTION__, __LINE__
 
-DWORD HandleConnection();
+DWORD HandleConnection(SOCKET ClientSocket);
 
 SOCKET createSocketAndListen(PCSTR pcszServiceName)
 {
@@ -89,15 +89,20 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        HandleConnection();
+        HandleConnection(ClientSocket);
+        shutdown(ClientSocket, SD_BOTH);
+        closesocket(ClientSocket);
     }
 
     net::cleanupWinSock();
     return 0;
 }
 
-DWORD HandleConnection()
+DWORD HandleConnection(SOCKET ClientSocket)
 {
+    char data[16] = {};
+    int bytesReceived;
+    net::Recv(ClientSocket, data, 16, bytesReceived);
+    printf(MYTEXT("%s\n"), data);
     return 0;
 }
-

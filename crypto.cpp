@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <type_traits>
-#undef UNICODE
 #include <tchar.h>
 #include <wincrypt.h>
 

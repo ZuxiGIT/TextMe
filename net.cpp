@@ -56,4 +56,36 @@ namespace net
         
         return 0;
     }
+
+	int Send(SOCKET s, const char *data, int numberOfBytes, int &bytesSent)
+	{
+		bytesSent = send(s, data, numberOfBytes, 0);
+
+		if (bytesSent == SOCKET_ERROR)
+		{
+            printf("failed to send data with error: %d\n", WSAGetLastError());
+			return 1;
+		}
+
+		return 0;
+	}
+
+	int Recv(SOCKET s, char *data, int numberOfBytes, int &bytesReceived)
+	{
+		bytesReceived = recv(s, data, numberOfBytes, 0);
+
+		if (bytesReceived == 0)
+		{
+            printf("Connection closed?\n");
+			return 1;
+		}
+
+		if (bytesReceived == SOCKET_ERROR)
+		{
+            printf("failed to recv data with error: %d\n", WSAGetLastError());
+			return 1;
+		}
+
+		return 0;
+	}
 }
