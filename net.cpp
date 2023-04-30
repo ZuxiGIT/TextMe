@@ -156,6 +156,7 @@ namespace net
         data[numberOfBytes] = '\0';
         retCode = RecvAll(s, (char *)data, numberOfBytes);
         printf("[%u bytes] %s\n", numberOfBytes, data);
+        delete [] data;
         return retCode;
     }
 }
