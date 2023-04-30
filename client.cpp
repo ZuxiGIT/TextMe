@@ -1,5 +1,5 @@
-#include "crypto.hpp"
 #include "net.hpp"
+#include "crypto.hpp"
 
 #include <windows.h>
 #include <stdio.h>
@@ -71,6 +71,7 @@ int main(void)
 {
     net::initializeWinSock();
     SOCKET sock = createSocketAndConnect("localhost", "27015");
+    (void)sock;
     net::cleanupWinSock();
     return 0;
 }

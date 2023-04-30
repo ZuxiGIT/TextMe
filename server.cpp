@@ -1,5 +1,5 @@
-#include "crypto.hpp"
 #include "net.hpp"
+#include "crypto.hpp"
 
 #include <windows.h>
 #include <stdio.h>
@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #define STR(x) #x
-#define MYTEXT(x)  "[Server] %s [%d] "TEXT(x), __FUNCTION__, __LINE__
+#define MYTEXT(x)  "[Server] %s [%d] " TEXT(x), __FUNCTION__, __LINE__
 
 DWORD HandleConnection();
 
@@ -92,6 +92,6 @@ int main(void)
 
 DWORD HandleConnection()
 {
-
+    return 0;
 }
 

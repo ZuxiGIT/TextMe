@@ -232,7 +232,7 @@ namespace crypto
             MyHandleError(TEXT("Error occured in encryptData\n")); 
         }
 
-        _tprintf(TEXT("%d bytes is needed to store the ciphertext\n"), dwCipherTextSize);
+        _tprintf(TEXT("%ld bytes is needed to store the ciphertext\n"), dwCipherTextSize);
         _tprintf(TEXT("data was encrypted successfully\n"));
 
         return dwCipherTextSize;
