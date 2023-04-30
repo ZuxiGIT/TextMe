@@ -8,6 +8,8 @@
 
 namespace net
 {
+    const uint32_t MAX_PACKET_SIZE = 4096;
+
     int initializeWinSock()
     {
         WSADATA wsaData;
@@ -57,9 +59,9 @@ namespace net
         return 0;
     }
 
-	int Send(SOCKET s, const char *data, int numberOfBytes, int &bytesSent)
+	int Send(SOCKET s, const void *data, uint32_t numberOfBytes, uint32_t &bytesSent)
 	{
-		bytesSent = send(s, data, numberOfBytes, 0);
+		bytesSent = send(s, (const char *)data, numberOfBytes, 0);
 
 		if (bytesSent == SOCKET_ERROR)
 		{
@@ -70,9 +72,9 @@ namespace net
 		return 0;
 	}
 
-	int Recv(SOCKET s, char *data, int numberOfBytes, int &bytesReceived)
+	int Recv(SOCKET s, void *data, uint32_t numberOfBytes, uint32_t &bytesReceived)
 	{
-		bytesReceived = recv(s, data, numberOfBytes, 0);
+		bytesReceived = recv(s, (char *)data, numberOfBytes, 0);
 
 		if (bytesReceived == 0)
 		{
@@ -89,16 +91,16 @@ namespace net
 		return 0;
 	}
 
-    int SendAll(SOCKET s, const char *data, int numberOfBytes)
+    int SendAll(SOCKET s, const void *data, uint32_t numberOfBytes)
 	{
-		int totalBytesSent = 0;
+		uint32_t totalBytesSent = 0;
 
 		while (totalBytesSent < numberOfBytes)
 		{
-			int bytesRemaining = numberOfBytes - totalBytesSent;
-			int bytesSent = 0;
-			const char *bufferOffset = data + totalBytesSent;
-			int result = Send(s, bufferOffset, bytesRemaining, bytesSent);
+			uint32_t bytesRemaining = numberOfBytes - totalBytesSent;
+			uint32_t bytesSent = 0;
+			const char *bufferOffset = (const char *)data + totalBytesSent;
+			uint32_t result = Send(s, (const char *)bufferOffset, bytesRemaining, bytesSent);
 			if (result != 0)
 			{
 				return 1;
@@ -109,16 +111,16 @@ namespace net
 		return 0;
 	}
 
-	int RecvAll(SOCKET s, char *data, int numberOfBytes)
+	int RecvAll(SOCKET s, void *data, uint32_t numberOfBytes)
 	{
-		int totalBytesReceived = 0;
+		uint32_t totalBytesReceived = 0;
 
 		while (totalBytesReceived < numberOfBytes)
 		{
-			int bytesRemaining = numberOfBytes - totalBytesReceived;
-			int bytesReceived = 0;
-			char *bufferOffset = data + totalBytesReceived;
-			int result = Recv(s, bufferOffset, bytesRemaining, bytesReceived);
+			uint32_t bytesRemaining = numberOfBytes - totalBytesReceived;
+			uint32_t bytesReceived = 0;
+			char *bufferOffset = (char *)data + totalBytesReceived;
+			uint32_t result = Recv(s, (char *)bufferOffset, bytesRemaining, bytesReceived);
 			if (result != 0)
 			{
 				return 1;
@@ -128,4 +130,31 @@ namespace net
 
 		return 0;
 	}
+
+    int SendMsg(SOCKET s, const void *data, uint32_t numberOfBytes)
+	{
+        uint32_t netNumberOfBytes = htonl(numberOfBytes); // convert host byte order to network byte order
+        int retCode = SendAll(s, (const char *)&netNumberOfBytes, sizeof(uint32_t));
+        if (retCode != 0)
+            return retCode;
+
+        return SendAll(s, (const char *)data, numberOfBytes);
+    }
+
+    int RecvMsg(SOCKET s) // , void *data)
+	{
+        uint32_t netNumberOfBytes = 0;
+        int retCode = RecvAll(s, (char *)&netNumberOfBytes, sizeof(uint32_t));
+        if (retCode != 0)
+            return retCode;
+
+        uint32_t numberOfBytes = ntohl(netNumberOfBytes); // convert network byte order to host byte order
+        if (numberOfBytes > MAX_PACKET_SIZE) // sanity check of buffer size
+            return -1;
+
+        char* data = new char[numberOfBytes];
+        retCode = RecvAll(s, (char *)data, numberOfBytes);
+        printf("[%u bytes] %s\n", numberOfBytes, data);
+        return retCode;
+    }
 }

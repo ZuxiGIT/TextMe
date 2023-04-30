@@ -100,8 +100,6 @@ int main(int argc, char *argv[])
 
 DWORD HandleConnection(SOCKET ClientSocket)
 {
-    char data[16] = {};
-    net::RecvAll(ClientSocket, data, 16);
-    printf(MYTEXT("%s\n"), data);
+    net::RecvMsg(ClientSocket);
     return 0;
 }
