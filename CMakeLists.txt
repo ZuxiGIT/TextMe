@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 project(TextMe VERSION 1.0 LANGUAGES CXX)
 
-add_compile_options(
-    -Werror
-    -Wall
-)
-    
+#add_compile_options(
+#    -Werror
+#    -Wall
+#)
+
 add_executable(server
     server.cpp
 )
