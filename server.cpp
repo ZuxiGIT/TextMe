@@ -104,8 +104,15 @@ DWORD HandleConnection(SOCKET ClientSocket)
     printf("Enter message: ");
     std::string data;
     std::cin >> data;
-    net::SendMsg(ClientSocket, data.c_str(), data.size());
-    net::RecvMsg(ClientSocket);
+    std::vector<BYTE> rawData;
+    rawData.resize(data.size());
+    memcpy(&rawData[0], &data[0], data.size());
+    net::SendMsg(ClientSocket, rawData);
+    rawData.clear();
+    net::RecvMsg(ClientSocket, rawData);
+    data.resize(rawData.size());
+    memcpy(&data[0], &rawData[0], rawData.size());
+    printf("Received message: %s\n", data.c_str());
     shutdown(ClientSocket, SD_BOTH);
     closesocket(ClientSocket);
     return 0;

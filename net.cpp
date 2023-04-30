@@ -100,7 +100,7 @@ namespace net
 			uint32_t bytesRemaining = numberOfBytes - totalBytesSent;
 			uint32_t bytesSent = 0;
 			const char *bufferOffset = (const char *)data + totalBytesSent;
-			uint32_t result = Send(s, (const char *)bufferOffset, bytesRemaining, bytesSent);
+			uint32_t result = Send(s, (const void *)bufferOffset, bytesRemaining, bytesSent);
 			if (result != 0)
 			{
 				return 1;
@@ -120,7 +120,7 @@ namespace net
 			uint32_t bytesRemaining = numberOfBytes - totalBytesReceived;
 			uint32_t bytesReceived = 0;
 			char *bufferOffset = (char *)data + totalBytesReceived;
-			uint32_t result = Recv(s, (char *)bufferOffset, bytesRemaining, bytesReceived);
+			uint32_t result = Recv(s, (void *)bufferOffset, bytesRemaining, bytesReceived);
 			if (result != 0)
 			{
 				return 1;
@@ -131,20 +131,22 @@ namespace net
 		return 0;
 	}
 
-    int SendMsg(SOCKET s, const void *data, uint32_t numberOfBytes)
+    int SendMsg(SOCKET s, const std::vector<BYTE> &data)
 	{
-        uint32_t netNumberOfBytes = htonl(numberOfBytes); // convert host byte order to network byte order
-        int retCode = SendAll(s, (const char *)&netNumberOfBytes, sizeof(uint32_t));
+        uint32_t netNumberOfBytes = htonl(data.size()); // convert host byte order to network byte order
+        int retCode = SendAll(s, (const void *)&netNumberOfBytes, sizeof(uint32_t));
         if (retCode != 0)
             return retCode;
 
-        return SendAll(s, (const char *)data, numberOfBytes);
+        return SendAll(s, &data[0], data.size());
     }
 
-    int RecvMsg(SOCKET s) // , void *data)
+    int RecvMsg(SOCKET s, std::vector<BYTE> &data)
 	{
+        data.clear();
+
         uint32_t netNumberOfBytes = 0;
-        int retCode = RecvAll(s, (char *)&netNumberOfBytes, sizeof(uint32_t));
+        int retCode = RecvAll(s, (void *)&netNumberOfBytes, sizeof(uint32_t));
         if (retCode != 0)
             return retCode;
 
@@ -152,11 +154,8 @@ namespace net
         if (numberOfBytes > MAX_PACKET_SIZE) // sanity check of buffer size
             return -1;
 
-        char* data = new char[numberOfBytes + 1];
-        data[numberOfBytes] = '\0';
-        retCode = RecvAll(s, (char *)data, numberOfBytes);
-        printf("[%u bytes] %s\n", numberOfBytes, data);
-        delete [] data;
+        data.resize(numberOfBytes);
+        retCode = RecvAll(s, &data[0], numberOfBytes);
         return retCode;
     }
 }

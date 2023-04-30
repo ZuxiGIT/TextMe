@@ -83,8 +83,15 @@ int main(int argc, char *argv[])
     printf("Enter message: ");
     std::string data;
     std::cin >> data;
-    net::SendMsg(sock, data.c_str(), data.size());
-    net::RecvMsg(sock);
+    std::vector<BYTE> rawData;
+    rawData.resize(data.size());
+    memcpy(&rawData[0], &data[0], data.size());
+    net::SendMsg(sock, rawData);
+    rawData.clear();
+    net::RecvMsg(sock, rawData);
+    data.resize(rawData.size());
+    memcpy(&data[0], &rawData[0], rawData.size());
+    printf("Received message: %s\n", data.c_str());
     shutdown(sock, SD_BOTH);
     closesocket(sock);
     net::cleanupWinSock();
