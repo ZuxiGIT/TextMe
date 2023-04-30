@@ -152,7 +152,8 @@ namespace net
         if (numberOfBytes > MAX_PACKET_SIZE) // sanity check of buffer size
             return -1;
 
-        char* data = new char[numberOfBytes];
+        char* data = new char[numberOfBytes + 1];
+        data[numberOfBytes] = '\0';
         retCode = RecvAll(s, (char *)data, numberOfBytes);
         printf("[%u bytes] %s\n", numberOfBytes, data);
         return retCode;

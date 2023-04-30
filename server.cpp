@@ -6,6 +6,7 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
+#include <iostream>
 
 #define STR(x) #x
 #define MYTEXT(x)  "[Server] %s [%d] " TEXT(x), __FUNCTION__, __LINE__
@@ -69,6 +70,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    std::ios::sync_with_stdio(true);
+
     net::initializeWinSock();
     SOCKET sock = createSocketAndListen(argv[1]);
     printf(MYTEXT("check\n"));
@@ -90,8 +93,6 @@ int main(int argc, char *argv[])
         }
 
         HandleConnection(ClientSocket);
-        shutdown(ClientSocket, SD_BOTH);
-        closesocket(ClientSocket);
     }
 
     net::cleanupWinSock();
@@ -100,6 +101,12 @@ int main(int argc, char *argv[])
 
 DWORD HandleConnection(SOCKET ClientSocket)
 {
+    printf("Enter message: ");
+    std::string data;
+    std::cin >> data;
+    net::SendMsg(ClientSocket, data.c_str(), data.size());
     net::RecvMsg(ClientSocket);
+    shutdown(ClientSocket, SD_BOTH);
+    closesocket(ClientSocket);
     return 0;
 }

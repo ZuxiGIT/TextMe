@@ -68,20 +68,23 @@ SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
     return ConnectSocket;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc < 3)
+    {
+        printf("failed to create socket. Please, specify server ip and port number as command line arguments\n");
+        return -1;
+    }
+
     std::ios::sync_with_stdio(true);
 
-    printf("Enter address: ");
-    std::string address;
-    std::cin >> address;
-    printf("Enter port: ");
-    std::string port;
-    std::cin >> port;
     net::initializeWinSock();
-    SOCKET sock = createSocketAndConnect(address.c_str(), port.c_str());
-    const char data[16] = "Please, work...";
-    net::SendMsg(sock, data, 16);
+    SOCKET sock = createSocketAndConnect(argv[1], argv[2]);
+    printf("Enter message: ");
+    std::string data;
+    std::cin >> data;
+    net::SendMsg(sock, data.c_str(), data.size());
+    net::RecvMsg(sock);
     shutdown(sock, SD_BOTH);
     closesocket(sock);
     net::cleanupWinSock();
