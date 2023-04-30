@@ -101,8 +101,7 @@ int main(int argc, char *argv[])
 DWORD HandleConnection(SOCKET ClientSocket)
 {
     char data[16] = {};
-    int bytesReceived;
-    net::Recv(ClientSocket, data, 16, bytesReceived);
+    net::RecvAll(ClientSocket, data, 16);
     printf(MYTEXT("%s\n"), data);
     return 0;
 }

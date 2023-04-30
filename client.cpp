@@ -81,8 +81,7 @@ int main(void)
     net::initializeWinSock();
     SOCKET sock = createSocketAndConnect(address.c_str(), port.c_str());
     const char data[16] = "Please, work...";
-    int bytesSent;
-    net::Send(sock, data, 16, bytesSent);
+    net::SendAll(sock, data, 16);
     shutdown(sock, SD_BOTH);
     closesocket(sock);
     net::cleanupWinSock();

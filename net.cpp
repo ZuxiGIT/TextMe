@@ -88,4 +88,44 @@ namespace net
 
 		return 0;
 	}
+
+    int SendAll(SOCKET s, const char *data, int numberOfBytes)
+	{
+		int totalBytesSent = 0;
+
+		while (totalBytesSent < numberOfBytes)
+		{
+			int bytesRemaining = numberOfBytes - totalBytesSent;
+			int bytesSent = 0;
+			const char *bufferOffset = data + totalBytesSent;
+			int result = Send(s, bufferOffset, bytesRemaining, bytesSent);
+			if (result != 0)
+			{
+				return 1;
+			}
+			totalBytesSent += bytesSent;
+		}
+
+		return 0;
+	}
+
+	int RecvAll(SOCKET s, char *data, int numberOfBytes)
+	{
+		int totalBytesReceived = 0;
+
+		while (totalBytesReceived < numberOfBytes)
+		{
+			int bytesRemaining = numberOfBytes - totalBytesReceived;
+			int bytesReceived = 0;
+			char *bufferOffset = data + totalBytesReceived;
+			int result = Recv(s, bufferOffset, bytesRemaining, bytesReceived);
+			if (result != 0)
+			{
+				return 1;
+			}
+			totalBytesReceived += bytesReceived;
+		}
+
+		return 0;
+	}
 }
