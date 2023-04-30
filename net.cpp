@@ -55,7 +55,7 @@ namespace net
         printf("->ip address: %s port: %d\n", 
             pchrIpAddress, 
             ntohs(Address.sin_port));
-        
+
         return 0;
     }
 

@@ -43,14 +43,14 @@ int main(void)
     printf("\n");
 
     crypto::encryptData(hSesKey, test, sizeof(test));
-    
+
     printf("\nafter encryption and before decryption:\n");
     for(DWORD i = 0; i < sizeof(test); ++i)
         printf("0x%hhX ", test[i]);
     printf("\n");
-    
+
     crypto::decryptData(hSesKey, test, sizeof(test));
-    
+
     printf("\nafter decryption:\n");
     for(DWORD i = 0; i < sizeof(test); ++i)
         printf("0x%hhX ", test[i]);
@@ -61,7 +61,7 @@ int main(void)
 
 #define STR(x) #x
     printf(__FUNCTION__);
-    
+
     crypto::destroyKey(hExchKey);
     crypto::destroyKey(hSigKey);
     crypto::destroyKey(hSesKey);

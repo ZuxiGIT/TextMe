@@ -7,7 +7,7 @@
 #include <wincrypt.h>
 
 namespace{
-    
+
     void MyHandleError(LPCTSTR psz)
     {
         _ftprintf(stderr, TEXT("An error occurred in the program. \n"));
@@ -24,14 +24,14 @@ namespace crypto
     HCRYPTPROV getCryptoProv(LPCSTR pszKeyContainerName, ProvType dProvType)
     {
         (void)dProvType;
-        
+    
         // Handle for the cryptographic provider context.
         HCRYPTPROV hCryptProv = 0;        
-        
+
         // The name of the container.
         if(pszKeyContainerName == nullptr)
             pszKeyContainerName = TEXT("Key Container for Encoding/Decoding");
-    
+
         //---------------------------------------------------------------
         // Begin processing. Attempt to acquire a context by using the 
         // specified key container.
@@ -127,7 +127,7 @@ namespace crypto
                               TEXT("getting a key.\n"));
             }
         }
-        
+
         _tprintf(TEXT("A key pair existed, or one was ")
                  TEXT("created.\n\n"));
         
@@ -195,7 +195,7 @@ namespace crypto
         {
             MyHandleError(TEXT("Error during CryptExportKey."));
         }
-    
+
         return dwBlobLen;
     }
 
