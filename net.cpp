@@ -43,7 +43,7 @@ namespace net
         }
 
         CHAR pchrIpAddress[INET_ADDRSTRLEN] = {};
-        if(!inet_ntop(AF_INET, &Address, pchrIpAddress, INET_ADDRSTRLEN))
+        if(!inet_ntop(AF_INET, &Address.sin_addr, pchrIpAddress, INET_ADDRSTRLEN))
         {
             printf("->address translation failed\n");
             WSACleanup();
