@@ -36,5 +36,4 @@ target_link_libraries(server
 target_link_libraries(client
     crypto
     net
-    ws_32
 )
