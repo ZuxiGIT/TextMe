@@ -6,6 +6,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
+#include <iostream>
 
 SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
 {
@@ -69,8 +70,16 @@ SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
 
 int main(void)
 {
+    std::ios::sync_with_stdio(true);
+
+    printf("Enter address: ");
+    std::string address;
+    std::cin >> address;
+    printf("Enter port: ");
+    std::string port;
+    std::cin >> port;
     net::initializeWinSock();
-    SOCKET sock = createSocketAndConnect("localhost", "27015");
+    SOCKET sock = createSocketAndConnect(address.c_str(), port.c_str());
     (void)sock;
     net::cleanupWinSock();
     return 0;

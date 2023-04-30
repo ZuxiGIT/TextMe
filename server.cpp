@@ -61,10 +61,16 @@ SOCKET createSocketAndListen(PCSTR pcszServiceName)
     return ListenSocket;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc < 2)
+    {
+        printf(MYTEXT("failed to create socket. Please, specify port number as command line argument\n"));
+        return -1;
+    }
+
     net::initializeWinSock();
-    SOCKET sock = createSocketAndListen("-1");
+    SOCKET sock = createSocketAndListen(argv[1]);
     printf(MYTEXT("check\n"));
 
     for(;;)
@@ -79,7 +85,7 @@ int main(void)
         printf(MYTEXT("->new client has been connected\n"));
         if(net::PrintSocketInfo(ClientSocket, false))
         {
-            printf(MYTEXT("failedto get socket info\n"));
+            printf(MYTEXT("failed to get socket info\n"));
             continue;
         }
 
