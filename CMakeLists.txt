@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
 project(TextMe VERSION 1.0 LANGUAGES CXX)
 
+ADD_DEFINITIONS(-DUNICODE)
+ADD_DEFINITIONS(-D_UNICODE)
+
 #add_compile_options(
 #    -Werror
 #    -Wall

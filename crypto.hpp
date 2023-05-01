@@ -22,10 +22,10 @@ namespace crypto
         AnyKey = PLAINTEXTKEYBLOB
     };
 
-    HCRYPTPROV getCryptoProv(PCSTR szProvName, ProvType ProvType);
+    HCRYPTPROV getCryptoProv(LPCWSTR szProvName, ProvType ProvType);
     HCRYPTKEY getKeyPair(KeyPairType type, HCRYPTPROV hCryptProv = 0);
     HCRYPTKEY getSessionKey(HCRYPTPROV hCryptProv);
-    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, ExportKeyType KeyType, BYTE** pbKeyBlob);
+    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, int KeyType, BYTE** pbKeyBlob);
     HCRYPTKEY importKey(HCRYPTPROV hCryptProv, HCRYPTKEY hPubKey, const BYTE* pbData, DWORD dwDataSize);
     DWORD encryptData(HCRYPTKEY hKey, BYTE* pbDataIn, DWORD dwDataLenIn, BYTE** pbDataOut = NULL, DWORD* dwDataLenOut = NULL);
     DWORD decryptData(HCRYPTKEY hKey, BYTE* pbBuffer, DWORD dwCipherTextLen);

@@ -10,7 +10,7 @@
 #include <string>
 
 #define STR(x) #x
-#define MYTEXT(x)  "[Server] %s [%d] " TEXT(x), __FUNCTION__, __LINE__
+#define MYTEXT(x)  "[Server] %s [%d] " x, __FUNCTION__, __LINE__
 
 DWORD HandleConnection(SOCKET ClientSocket);
 
@@ -100,8 +100,43 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
+    HCRYPTKEY hExchKey = crypto::getKeyPair(crypto::KeyPairType::Exchange,hCryptoProv);
+
+    BYTE* pbBlob = NULL;
+    DWORD dwBlobSize = crypto::exportKey(hExchKey, 0, PUBLICKEYBLOB, &pbBlob);
+
+    std::vector<BYTE> pubKey;
+    pubKey.resize(dwBlobSize);
+    memcpy(&pubKey[0], pbBlob, dwBlobSize);
+    delete [] pbBlob;
+    net::SendMsg(s, pubKey);
+
+    printf("\nPublic Key Blob size is %zu\n", pubKey.size());
+    printf("Public Key Blob:\n");
+    for(DWORD i = 0; i < pubKey.size(); ++i)
+        printf("%02hhx ", pubKey[i]);
+    printf("\n\n");
+
+    std::vector<BYTE> sesKey;
+    net::RecvMsg(s, sesKey);
+
+    printf("\nSession Key Blob size is %zu\n", sesKey.size());
+    printf("Session Key Blob:\n");
+    for(DWORD i = 0; i < sesKey.size(); ++i)
+        printf("%02hhx ", sesKey[i]);
+    printf("\n\n");
+
+    crypto::destroyKey(hExchKey);
+
+    return crypto::importKey(hCryptoProv, 0, &sesKey[0], sesKey.size());
+}
+
 DWORD HandleConnection(SOCKET ClientSocket)
 {
+    HCRYPTPROV hCryptoProv  = crypto::getCryptoProv(TEXT("Key Containter for Encoding/Decoding"), crypto::ProvType::RSA);
+    HCRYPTKEY hImpSesKey = exchangeKeys(ClientSocket, hCryptoProv);
+
     while (true)
     {
         printf("Enter message: ");
@@ -109,15 +144,23 @@ DWORD HandleConnection(SOCKET ClientSocket)
         std::getline(std::cin, data);
         if (data.size() == 0)
             continue;
+        printf("\n");
         std::vector<BYTE> rawData;
         rawData.resize(data.size());
         memcpy(&rawData[0], &data[0], data.size());
+        crypto::encryptData(hImpSesKey, &rawData[0], rawData.size());
         net::SendMsg(ClientSocket, rawData);
+        printf("\nWaiting for message from client...\n\n");
         net::RecvMsg(ClientSocket, rawData);
+        crypto::decryptData(hImpSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());
-        printf("Received message: %s\n", data.c_str());
+        printf("\nReceived message: %s\n\n", data.c_str());
     }
+
+    crypto::destroyKey(hImpSesKey);
+    crypto::releaseCryptoProv(hCryptoProv);
+
     shutdown(ClientSocket, SD_BOTH);
     closesocket(ClientSocket);
     return 0;

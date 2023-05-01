@@ -1,5 +1,5 @@
 #include "crypto.hpp"
-#include "net.hpp"
+// #include "net.hpp"
 #include <stdio.h>
 #include <tchar.h>
 
@@ -9,7 +9,7 @@
 int main(void) 
 { 
 
-    HCRYPTPROV hCryptoProv  = crypto::getCryptoProv("Key Containter for Encoding/Decoding", crypto::ProvType::RSA);
+    HCRYPTPROV hCryptoProv  = crypto::getCryptoProv(TEXT("Key Containter for Encoding/Decoding"), crypto::ProvType::RSA);
     HCRYPTKEY hExchKey = crypto::getKeyPair(crypto::KeyPairType::Exchange,hCryptoProv);
     HCRYPTKEY hSigKey = crypto::getKeyPair(crypto::KeyPairType::Signature, hCryptoProv);
     HCRYPTKEY hSesKey = crypto::getSessionKey(hCryptoProv);

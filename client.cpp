@@ -69,6 +69,40 @@ SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
     return ConnectSocket;
 }
 
+HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
+    HCRYPTKEY hSesKey = crypto::getSessionKey(hCryptoProv);
+
+    std::vector<BYTE> pubKey;
+    net::RecvMsg(s, pubKey);
+
+    printf("\nPublic Key Blob size is %zu\n", pubKey.size());
+    printf("Public Key Blob:\n");
+    for(DWORD i = 0; i < pubKey.size(); ++i)
+        printf("%02hhx ", pubKey[i]);
+    printf("\n\n");
+
+    HCRYPTKEY hImpPubKey = crypto::importKey(hCryptoProv, 0, &pubKey[0], pubKey.size());
+
+    BYTE* pbBlob = NULL;
+    DWORD dwBlobSize = crypto::exportKey(hSesKey, hImpPubKey, SIMPLEBLOB, &pbBlob);
+
+    std::vector<BYTE> sesKey;
+    sesKey.resize(dwBlobSize);
+    memcpy(&sesKey[0], pbBlob, dwBlobSize);
+    delete [] pbBlob;
+    net::SendMsg(s, sesKey);
+
+    printf("\nSession Key Blob size is %zu\n", sesKey.size());
+    printf("Session Key Blob:\n");
+    for(DWORD i = 0; i < sesKey.size(); ++i)
+        printf("%02hhx ", sesKey[i]);
+    printf("\n\n");
+
+    crypto::destroyKey(hImpPubKey);
+
+    return hSesKey;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 3)
@@ -81,6 +115,10 @@ int main(int argc, char *argv[])
 
     net::initializeWinSock();
     SOCKET sock = createSocketAndConnect(argv[1], argv[2]);
+
+    HCRYPTPROV hCryptoProv  = crypto::getCryptoProv(TEXT("Key Containter for Encoding/Decoding"), crypto::ProvType::RSA);
+    HCRYPTKEY hSesKey = exchangeKeys(sock, hCryptoProv);
+
     while (true)
     {
         printf("Enter message: ");
@@ -88,15 +126,24 @@ int main(int argc, char *argv[])
         std::getline(std::cin, data);
         if (data.size() == 0)
             continue;
+        printf("\n");
         std::vector<BYTE> rawData;
         rawData.resize(data.size());
         memcpy(&rawData[0], &data[0], data.size());
+        printf("rawData.size() = %zu\n", rawData.size());
+        printf("encr size = %zu\n", crypto::encryptData(hSesKey, &rawData[0], rawData.size()));
         net::SendMsg(sock, rawData);
+        printf("\nWaiting for message from server...\n\n");
         net::RecvMsg(sock, rawData);
+        crypto::decryptData(hSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());
-        printf("Received message: %s\n", data.c_str());
+        printf("\nReceived message: %s\n\n", data.c_str());
     }
+
+    crypto::destroyKey(hSesKey);
+    crypto::releaseCryptoProv(hCryptoProv);
+
     shutdown(sock, SD_BOTH);
     closesocket(sock);
     net::cleanupWinSock();

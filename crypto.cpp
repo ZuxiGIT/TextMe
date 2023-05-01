@@ -21,7 +21,7 @@ namespace{
 namespace crypto
 {
 
-    HCRYPTPROV getCryptoProv(LPCSTR pszKeyContainerName, ProvType dProvType)
+    HCRYPTPROV getCryptoProv(LPCWSTR pszKeyContainerName, ProvType dProvType)
     {
         (void)dProvType;
     
@@ -43,7 +43,7 @@ namespace crypto
             0))
         {
             _tprintf(
-                TEXT("A crypto context with the \"%s\" key container ")
+                TEXT("A crypto context with the \"%ls\" key container ")
                 TEXT("has been acquired.\n"), 
                 pszKeyContainerName);
         }
@@ -152,15 +152,14 @@ namespace crypto
         return hKey;
     }
 
-    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, ExportKeyType KeyType, BYTE** pbKeyBlob)
+    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, int KeyType, BYTE** pbKeyBlob)
     {
         DWORD dwBlobLen = 0;
-        DWORD dwBlobType = static_cast<std::underlying_type_t<ExportKeyType>>(KeyType);
 
         if(CryptExportKey(
             hKey, 
             hXchgKey, 
-            dwBlobType, 
+            KeyType, 
             0, 
             NULL, 
             &dwBlobLen)) 
@@ -184,7 +183,7 @@ namespace crypto
         if(CryptExportKey(
             hKey, 
             hXchgKey, 
-            dwBlobType, 
+            KeyType, 
             0, 
             *pbKeyBlob, 
             &dwBlobLen))
