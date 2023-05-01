@@ -74,6 +74,7 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
 
     std::vector<BYTE> pubKey;
     net::RecvMsg(s, pubKey);
+    printf("Public key received...\n");
 
     printf("\nPublic Key Blob size is %zu\n", pubKey.size());
     printf("Public Key Blob:\n");
@@ -90,6 +91,7 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
     sesKey.resize(dwBlobSize);
     memcpy(&sesKey[0], pbBlob, dwBlobSize);
     delete [] pbBlob;
+    printf("Sending session key to client...\n");
     net::SendMsg(s, sesKey);
 
     printf("\nSession Key Blob size is %zu\n", sesKey.size());
@@ -130,11 +132,18 @@ int main(int argc, char *argv[])
         std::vector<BYTE> rawData;
         rawData.resize(data.size());
         memcpy(&rawData[0], &data[0], data.size());
-        printf("rawData.size() = %zu\n", rawData.size());
-        printf("encr size = %zu\n", crypto::encryptData(hSesKey, &rawData[0], rawData.size()));
+        crypto::encryptData(hSesKey, &rawData[0], rawData.size());
         net::SendMsg(sock, rawData);
+        data.resize(rawData.size());
+        memcpy(&data[0], &rawData[0], rawData.size());
+        printf("\nSent raw data: %s\n\n", data.c_str());
+
         printf("\nWaiting for message from server...\n\n");
+
         net::RecvMsg(sock, rawData);
+        data.resize(rawData.size());
+        memcpy(&data[0], &rawData[0], rawData.size());
+        printf("\nReceived raw data: %s\n\n", data.c_str());
         crypto::decryptData(hSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());
