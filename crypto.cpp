@@ -262,3 +262,10 @@ namespace crypto
         return CryptReleaseContext(hCryptProv, 0);
     }
 } /* namespace crypto */
+
+    void printBytes(const char *header, const BYTE *data, size_t size) {
+        printf("%s", header);
+        for(DWORD i = 0; i < size; ++i)
+            printf("%02hhx ", data[i]);
+        printf("\n\n");
+    }

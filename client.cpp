@@ -77,10 +77,7 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
     printf("Public key received...\n");
 
     printf("\nPublic Key Blob size is %zu\n", pubKey.size());
-    printf("Public Key Blob:\n");
-    for(DWORD i = 0; i < pubKey.size(); ++i)
-        printf("%02hhx ", pubKey[i]);
-    printf("\n\n");
+    printBytes("Public Key Blob:\n", &pubKey[0], pubKey.size());
 
     HCRYPTKEY hImpPubKey = crypto::importKey(hCryptoProv, 0, &pubKey[0], pubKey.size());
 
@@ -91,14 +88,11 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
     sesKey.resize(dwBlobSize);
     memcpy(&sesKey[0], pbBlob, dwBlobSize);
     delete [] pbBlob;
-    printf("Sending session key to client...\n");
+    printf("\nSession Key Blob size is %zu\n", sesKey.size());
+    printBytes("Session Key Blob:\n", &sesKey[0], sesKey.size());
+    printf("Sending session key to server...\n");
     net::SendMsg(s, sesKey);
 
-    printf("\nSession Key Blob size is %zu\n", sesKey.size());
-    printf("Session Key Blob:\n");
-    for(DWORD i = 0; i < sesKey.size(); ++i)
-        printf("%02hhx ", sesKey[i]);
-    printf("\n\n");
 
     crypto::destroyKey(hImpPubKey);
 
@@ -134,16 +128,12 @@ int main(int argc, char *argv[])
         memcpy(&rawData[0], &data[0], data.size());
         crypto::encryptData(hSesKey, &rawData[0], rawData.size());
         net::SendMsg(sock, rawData);
-        data.resize(rawData.size());
-        memcpy(&data[0], &rawData[0], rawData.size());
-        printf("\nSent raw data: %s\n\n", data.c_str());
+        printBytes("\nSent raw data: ", &rawData[0], rawData.size());
 
         printf("\nWaiting for message from server...\n\n");
 
         net::RecvMsg(sock, rawData);
-        data.resize(rawData.size());
-        memcpy(&data[0], &rawData[0], rawData.size());
-        printf("\nReceived raw data: %s\n\n", data.c_str());
+        printBytes("\nReceived raw data: ", &rawData[0], rawData.size());
         crypto::decryptData(hSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());

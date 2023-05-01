@@ -33,3 +33,5 @@ namespace crypto
     BOOL destroyKey(HCRYPTKEY hKey);
     BOOL releaseCryptoProv(HCRYPTPROV hCryptProv);
 }
+
+void printBytes(const char *header, const BYTE *data, size_t size);

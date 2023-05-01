@@ -112,10 +112,7 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
     delete [] pbBlob;
 
     printf("\nPublic Key Blob size is %zu\n", pubKey.size());
-    printf("Public Key Blob:\n");
-    for(DWORD i = 0; i < pubKey.size(); ++i)
-        printf("%02hhx ", pubKey[i]);
-    printf("\n\n");
+    printBytes("Public Key Blob:\n", &pubKey[0], pubKey.size());
 
     printf("Sending public key to client...\n");
     net::SendMsg(s, pubKey);
@@ -125,10 +122,7 @@ HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
     printf("Session key received...\n");
 
     printf("\nSession Key Blob size is %zu\n", sesKey.size());
-    printf("Session Key Blob:\n");
-    for(DWORD i = 0; i < sesKey.size(); ++i)
-        printf("%02hhx ", sesKey[i]);
-    printf("\n\n");
+    printBytes("Session Key Blob:\n", &sesKey[0], sesKey.size());
 
     crypto::destroyKey(hExchKey);
 
@@ -153,16 +147,12 @@ DWORD HandleConnection(SOCKET ClientSocket)
         memcpy(&rawData[0], &data[0], data.size());
         crypto::encryptData(hImpSesKey, &rawData[0], rawData.size());
         net::SendMsg(ClientSocket, rawData);
-        data.resize(rawData.size());
-        memcpy(&data[0], &rawData[0], rawData.size());
-        printf("\nSent raw data: %s\n\n", data.c_str());
+        printBytes("\nSent raw data: ", &rawData[0], rawData.size());
 
         printf("\nWaiting for message from client...\n\n");
 
         net::RecvMsg(ClientSocket, rawData);
-        data.resize(rawData.size());
-        memcpy(&data[0], &rawData[0], rawData.size());
-        printf("\nReceived raw data: %s\n\n", data.c_str());
+        printBytes("\nReceived raw data: ", &rawData[0], rawData.size());
         crypto::decryptData(hImpSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());
