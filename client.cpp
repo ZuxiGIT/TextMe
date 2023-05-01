@@ -7,6 +7,7 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <iostream>
+#include <string>
 
 SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
 {
@@ -80,18 +81,22 @@ int main(int argc, char *argv[])
 
     net::initializeWinSock();
     SOCKET sock = createSocketAndConnect(argv[1], argv[2]);
-    printf("Enter message: ");
-    std::string data;
-    std::cin >> data;
-    std::vector<BYTE> rawData;
-    rawData.resize(data.size());
-    memcpy(&rawData[0], &data[0], data.size());
-    net::SendMsg(sock, rawData);
-    rawData.clear();
-    net::RecvMsg(sock, rawData);
-    data.resize(rawData.size());
-    memcpy(&data[0], &rawData[0], rawData.size());
-    printf("Received message: %s\n", data.c_str());
+    while (true)
+    {
+        printf("Enter message: ");
+        std::string data;
+        std::getline(std::cin, data);
+        if (data.size() == 0)
+            continue;
+        std::vector<BYTE> rawData;
+        rawData.resize(data.size());
+        memcpy(&rawData[0], &data[0], data.size());
+        net::SendMsg(sock, rawData);
+        net::RecvMsg(sock, rawData);
+        data.resize(rawData.size());
+        memcpy(&data[0], &rawData[0], rawData.size());
+        printf("Received message: %s\n", data.c_str());
+    }
     shutdown(sock, SD_BOTH);
     closesocket(sock);
     net::cleanupWinSock();

@@ -7,6 +7,7 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <iostream>
+#include <string>
 
 #define STR(x) #x
 #define MYTEXT(x)  "[Server] %s [%d] " TEXT(x), __FUNCTION__, __LINE__
@@ -101,18 +102,22 @@ int main(int argc, char *argv[])
 
 DWORD HandleConnection(SOCKET ClientSocket)
 {
-    printf("Enter message: ");
-    std::string data;
-    std::cin >> data;
-    std::vector<BYTE> rawData;
-    rawData.resize(data.size());
-    memcpy(&rawData[0], &data[0], data.size());
-    net::SendMsg(ClientSocket, rawData);
-    rawData.clear();
-    net::RecvMsg(ClientSocket, rawData);
-    data.resize(rawData.size());
-    memcpy(&data[0], &rawData[0], rawData.size());
-    printf("Received message: %s\n", data.c_str());
+    while (true)
+    {
+        printf("Enter message: ");
+        std::string data;
+        std::getline(std::cin, data);
+        if (data.size() == 0)
+            continue;
+        std::vector<BYTE> rawData;
+        rawData.resize(data.size());
+        memcpy(&rawData[0], &data[0], data.size());
+        net::SendMsg(ClientSocket, rawData);
+        net::RecvMsg(ClientSocket, rawData);
+        data.resize(rawData.size());
+        memcpy(&data[0], &rawData[0], rawData.size());
+        printf("Received message: %s\n", data.c_str());
+    }
     shutdown(ClientSocket, SD_BOTH);
     closesocket(ClientSocket);
     return 0;
