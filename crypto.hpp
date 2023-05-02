@@ -22,16 +22,16 @@ namespace crypto
         AnyKey = PLAINTEXTKEYBLOB
     };
 
-    HCRYPTPROV getCryptoProv(LPCWSTR szProvName, ProvType ProvType);
+    HCRYPTPROV getCryptoProv(LPCTSTR szProvName, ProvType ProvType);
     HCRYPTKEY getKeyPair(KeyPairType type, HCRYPTPROV hCryptProv = 0);
     HCRYPTKEY getSessionKey(HCRYPTPROV hCryptProv);
     DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, int KeyType, BYTE** pbKeyBlob);
     HCRYPTKEY importKey(HCRYPTPROV hCryptProv, HCRYPTKEY hPubKey, const BYTE* pbData, DWORD dwDataSize);
-    DWORD encryptData(HCRYPTKEY hKey, BYTE* pbDataIn, DWORD dwDataLenIn, BYTE** pbDataOut = NULL, DWORD* dwDataLenOut = NULL);
+    DWORD encryptData(HCRYPTKEY hKey, BYTE* pbDataIn, DWORD dwDataLenIn);
     DWORD decryptData(HCRYPTKEY hKey, BYTE* pbBuffer, DWORD dwCipherTextLen);
 
     BOOL destroyKey(HCRYPTKEY hKey);
     BOOL releaseCryptoProv(HCRYPTPROV hCryptProv);
 }
 
-void printBytes(const char *header, const BYTE *data, size_t size);
+void printBytes(LPCTSTR header, const PBYTE data, size_t size);

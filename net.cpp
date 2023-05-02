@@ -39,7 +39,7 @@ namespace net
 
         if(iResult == SOCKET_ERROR)
         {
-            printf("failed to retrieve address from socket with error: %d\n", WSAGetLastError());
+            printf("Failed to retrieve address from socket with error: %d\n", WSAGetLastError());
             WSACleanup();
             return 1;
         }
@@ -47,34 +47,34 @@ namespace net
         CHAR pchrIpAddress[INET_ADDRSTRLEN] = {};
         if(!inet_ntop(AF_INET, &Address.sin_addr, pchrIpAddress, INET_ADDRSTRLEN))
         {
-            printf("->address translation failed\n");
+            printf("Address translation failed\n");
             WSACleanup();
             return 1;
         }
 
-        printf("->ip address: %s port: %d\n", 
-            pchrIpAddress, 
-            ntohs(Address.sin_port));
+        printf("Ip address: %s port: %d\n", 
+               pchrIpAddress, 
+               ntohs(Address.sin_port));
 
         return 0;
     }
 
-	int Send(SOCKET s, const void *data, uint32_t numberOfBytes, uint32_t &bytesSent)
+	int Send(SOCKET s, const BYTE* data, DWORD numberOfBytes, DWORD &bytesSent)
 	{
-		bytesSent = send(s, (const char *)data, numberOfBytes, 0);
+		bytesSent = send(s, reinterpret_cast<const CHAR*>(data), numberOfBytes, 0);
 
-		if (bytesSent == SOCKET_ERROR)
+		if (bytesSent == static_cast<DWORD>(SOCKET_ERROR))
 		{
-            printf("failed to send data with error: %d\n", WSAGetLastError());
+            printf("Failed to send data with error: %d\n", WSAGetLastError());
 			return 1;
 		}
 
 		return 0;
 	}
 
-	int Recv(SOCKET s, void *data, uint32_t numberOfBytes, uint32_t &bytesReceived)
+	int Recv(SOCKET s, PBYTE data, DWORD numberOfBytes, DWORD& bytesReceived)
 	{
-		bytesReceived = recv(s, (char *)data, numberOfBytes, 0);
+		bytesReceived = recv(s, reinterpret_cast<CHAR*>(data), numberOfBytes, 0);
 
 		if (bytesReceived == 0)
 		{
@@ -82,25 +82,25 @@ namespace net
 			return 1;
 		}
 
-		if (bytesReceived == SOCKET_ERROR)
+		if (bytesReceived == static_cast<DWORD>(SOCKET_ERROR))
 		{
-            printf("failed to recv data with error: %d\n", WSAGetLastError());
+            printf("Failed to recv data with error: %d\n", WSAGetLastError());
 			return 1;
 		}
 
 		return 0;
 	}
 
-    int SendAll(SOCKET s, const void *data, uint32_t numberOfBytes)
+    int SendAll(SOCKET s, const BYTE* data, DWORD numberOfBytes)
 	{
-		uint32_t totalBytesSent = 0;
+		DWORD totalBytesSent = 0;
 
 		while (totalBytesSent < numberOfBytes)
 		{
-			uint32_t bytesRemaining = numberOfBytes - totalBytesSent;
-			uint32_t bytesSent = 0;
-			const char *bufferOffset = (const char *)data + totalBytesSent;
-			uint32_t result = Send(s, (const void *)bufferOffset, bytesRemaining, bytesSent);
+			DWORD bytesRemaining = numberOfBytes - totalBytesSent;
+			DWORD bytesSent = 0;
+			const BYTE*  bufferOffset = data + totalBytesSent;
+			DWORD result = Send(s, bufferOffset, bytesRemaining, bytesSent);
 			if (result != 0)
 			{
 				return 1;
@@ -111,16 +111,16 @@ namespace net
 		return 0;
 	}
 
-	int RecvAll(SOCKET s, void *data, uint32_t numberOfBytes)
+	int RecvAll(SOCKET s, PBYTE data, DWORD numberOfBytes)
 	{
-		uint32_t totalBytesReceived = 0;
+		DWORD totalBytesReceived = 0;
 
 		while (totalBytesReceived < numberOfBytes)
 		{
-			uint32_t bytesRemaining = numberOfBytes - totalBytesReceived;
-			uint32_t bytesReceived = 0;
-			char *bufferOffset = (char *)data + totalBytesReceived;
-			uint32_t result = Recv(s, (void *)bufferOffset, bytesRemaining, bytesReceived);
+			DWORD bytesRemaining = numberOfBytes - totalBytesReceived;
+			DWORD bytesReceived = 0;
+			BYTE* bufferOffset = data + totalBytesReceived;
+			int result = Recv(s, bufferOffset, bytesRemaining, bytesReceived);
 			if (result != 0)
 			{
 				return 1;
@@ -133,29 +133,29 @@ namespace net
 
     int SendMsg(SOCKET s, const std::vector<BYTE> &data)
 	{
-        uint32_t netNumberOfBytes = htonl(data.size()); // convert host byte order to network byte order
-        int retCode = SendAll(s, (const void *)&netNumberOfBytes, sizeof(uint32_t));
+        DWORD netNumberOfBytes = htonl(data.size()); // convert host byte order to network byte order
+        int retCode = SendAll(s, reinterpret_cast<PBYTE>(&netNumberOfBytes), sizeof(DWORD));
         if (retCode != 0)
             return retCode;
 
-        return SendAll(s, &data[0], data.size());
+        return SendAll(s, data.data(), data.size());
     }
 
     int RecvMsg(SOCKET s, std::vector<BYTE> &data)
 	{
         data.clear();
 
-        uint32_t netNumberOfBytes = 0;
-        int retCode = RecvAll(s, (void *)&netNumberOfBytes, sizeof(uint32_t));
+        DWORD netNumberOfBytes = 0;
+        int retCode = RecvAll(s, reinterpret_cast<PBYTE>(&netNumberOfBytes), sizeof(DWORD));
         if (retCode != 0)
             return retCode;
 
-        uint32_t numberOfBytes = ntohl(netNumberOfBytes); // convert network byte order to host byte order
+        DWORD numberOfBytes = ntohl(netNumberOfBytes); // convert network byte order to host byte order
         if (numberOfBytes > MAX_PACKET_SIZE) // sanity check of buffer size
             return -1;
 
         data.resize(numberOfBytes);
-        retCode = RecvAll(s, &data[0], numberOfBytes);
+        retCode = RecvAll(s, data.data(), numberOfBytes);
         return retCode;
     }
 }

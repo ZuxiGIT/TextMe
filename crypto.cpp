@@ -21,7 +21,7 @@ namespace{
 namespace crypto
 {
 
-    HCRYPTPROV getCryptoProv(LPCWSTR pszKeyContainerName, ProvType dProvType)
+    HCRYPTPROV getCryptoProv(LPCTSTR pszKeyContainerName, ProvType dProvType)
     {
         (void)dProvType;
     
@@ -43,7 +43,7 @@ namespace crypto
             0))
         {
             _tprintf(
-                TEXT("A crypto context with the \"%ls\" key container ")
+                TEXT("A crypto context with the \"%s\" key container ")
                 TEXT("has been acquired.\n"), 
                 pszKeyContainerName);
         }
@@ -139,7 +139,7 @@ namespace crypto
         HCRYPTKEY hKey = 0;
         if (CryptGenKey(     
             hCryptProv,      
-            CALG_RC4,      
+            CALG_RC4,          // for example, we use stream encryption algorithm (also because of CSP is PROV_RSA_FULL)
             CRYPT_EXPORTABLE, 
             &hKey))
         {   
@@ -188,7 +188,7 @@ namespace crypto
             *pbKeyBlob, 
             &dwBlobLen))
         {
-            _tprintf(TEXT("Contents have been written to the BLOB. \n"));
+            _tprintf(TEXT("Contents have been written to the BLOB.\n\n"));
         }
         else
         {
@@ -214,7 +214,7 @@ namespace crypto
         return hKey;
     }
 
-    DWORD encryptData(HCRYPTKEY hKey, BYTE* pbDataIn, DWORD dwDataLenIn, BYTE** pbDataOut, DWORD* dwDataLenOut)
+    DWORD encryptData(HCRYPTKEY hKey, BYTE* pbDataIn, DWORD dwDataLenIn)
     {
         DWORD dwCipherTextSize = dwDataLenIn;
 
@@ -263,9 +263,9 @@ namespace crypto
     }
 } /* namespace crypto */
 
-    void printBytes(const char *header, const BYTE *data, size_t size) {
-        printf("%s", header);
-        for(DWORD i = 0; i < size; ++i)
-            printf("%02hhx ", data[i]);
-        printf("\n\n");
-    }
+void printBytes(LPCTSTR header, const PBYTE data, size_t size) {
+    printf("%s", header);
+    for(DWORD i = 0; i < size; ++i)
+        printf("%02hhx ", data[i]);
+    printf("\n\n");
+}
