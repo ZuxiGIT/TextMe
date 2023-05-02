@@ -10,7 +10,7 @@
 #include <string>
 
 #define STR(x) #x
-#define MYTEXT(x)  "[Server] %s [%d] " x, __FUNCTION__, __LINE__
+#define MYTEXT(x)  "[Server] %s [%d] -> " x, __FUNCTION__, __LINE__
 
 DWORD HandleConnection(SOCKET ClientSocket);
 
@@ -67,33 +67,37 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf(MYTEXT("failed to create socket. Please, specify port number as command line argument\n"));
+        fprintf(stderr, "Wrong parameters\n");
+        fprintf(stderr, "Usage: server.exe <server address> <server port>\n");
         return -1;
     }
 
-    std::ios::sync_with_stdio(true);
-
+    printf(MYTEXT("Server program\n"));
+    printf(MYTEXT("Initialising winsock library...\n"));
     net::initializeWinSock();
+    
+    printf(MYTEXT("Creating socket and starting listenning...\n"));
     SOCKET sock = createSocketAndListen(argv[1]);
-    printf(MYTEXT("check\n"));
 
     for(;;)
     {
         // Accept a client socket
         SOCKET ClientSocket = accept(sock, NULL, NULL);
         if (ClientSocket == INVALID_SOCKET) {
-            printf(MYTEXT("accept failed with error: %d\n"), WSAGetLastError());
+            printf(MYTEXT("Accept failed with error: %d\n"), WSAGetLastError());
             continue;
         }
 
-        printf(MYTEXT("->new client has been connected\n"));
+        printf(MYTEXT("New client has been connected\n"));
         if(net::PrintSocketInfo(ClientSocket, false))
         {
-            printf(MYTEXT("failed to get socket info\n"));
+            closesocket(ClientSocket);
+            printf(MYTEXT("Failed to get socket info\n"));
             continue;
         }
 
-        HandleConnection(ClientSocket);
+        if(HandleConnection(ClientSocket) == 1)
+            break;
     }
 
     net::cleanupWinSock();
@@ -101,32 +105,29 @@ int main(int argc, char *argv[])
 }
 
 HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
-    HCRYPTKEY hExchKey = crypto::getKeyPair(crypto::KeyPairType::Exchange,hCryptoProv);
+    HCRYPTKEY hExchKey = crypto::getKeyPair(crypto::KeyPairType::Exchange, hCryptoProv);
 
     BYTE* pbBlob = NULL;
     DWORD dwBlobSize = crypto::exportKey(hExchKey, 0, PUBLICKEYBLOB, &pbBlob);
 
-    std::vector<BYTE> pubKey;
-    pubKey.resize(dwBlobSize);
-    memcpy(&pubKey[0], pbBlob, dwBlobSize);
-    delete [] pbBlob;
+    std::vector<BYTE> pubKey (pbBlob, pbBlob + dwBlobSize);
 
-    printf("\nPublic Key Blob size is %zu\n", pubKey.size());
-    printBytes("Public Key Blob:\n", &pubKey[0], pubKey.size());
+    printf(MYTEXT("Public Key Blob size is %zu\n"), pubKey.size());
+    printBytes("Public Key Blob:\n", pubKey.data(), pubKey.size());
 
-    printf("Sending public key to client...\n");
+    printf(MYTEXT("Sending public key to client...\n"));
     net::SendMsg(s, pubKey);
 
     std::vector<BYTE> sesKey;
     net::RecvMsg(s, sesKey);
-    printf("Session key received...\n");
+    printf(MYTEXT("Session key received\n"));
 
-    printf("\nSession Key Blob size is %zu\n", sesKey.size());
-    printBytes("Session Key Blob:\n", &sesKey[0], sesKey.size());
+    printf(MYTEXT("\nSession Key Blob size is %zu\n"), sesKey.size());
+    printBytes("Session Key Blob:\n", sesKey.data(), sesKey.size());
 
     crypto::destroyKey(hExchKey);
 
-    return crypto::importKey(hCryptoProv, 0, &sesKey[0], sesKey.size());
+    return crypto::importKey(hCryptoProv, 0, sesKey.data(), sesKey.size());
 }
 
 DWORD HandleConnection(SOCKET ClientSocket)
@@ -134,13 +135,16 @@ DWORD HandleConnection(SOCKET ClientSocket)
     HCRYPTPROV hCryptoProv  = crypto::getCryptoProv(TEXT("Key Containter for Encoding/Decoding"), crypto::ProvType::RSA);
     HCRYPTKEY hImpSesKey = exchangeKeys(ClientSocket, hCryptoProv);
 
-    while (true)
+    for(;;)
     {
         printf("Enter message: ");
         std::string data;
         std::getline(std::cin, data);
         if (data.size() == 0)
             continue;
+        if (data == "exit")
+            break;
+
         printf("\n");
         std::vector<BYTE> rawData;
         rawData.resize(data.size());

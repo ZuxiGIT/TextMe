@@ -9,6 +9,9 @@
 #include <iostream>
 #include <string>
 
+#define STR(x) #x
+#define MYTEXT(x)  "[Client] %s [%d] -> " x, __FUNCTION__, __LINE__
+
 SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
 {
     struct addrinfo *result = NULL,
@@ -23,27 +26,29 @@ SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
     SOCKET ConnectSocket = INVALID_SOCKET;
 
     int iResult = 0;
+
     // Resolve the server address and port
     iResult = getaddrinfo(pcszServerName, pcszServiceName, &hints, &result);
     if (iResult != 0) {
-        printf("getaddrinfo failed: %d\n", iResult);
+        printf(MYTEXT("Getaddrinfo failed: %d\n"), iResult);
         return INVALID_SOCKET;
     }
 
     // Attempt to connect to an address until one succeeds
-    for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) 
+    for(ptr = result; ptr != NULL; ptr = ptr->ai_next) 
     {
         // Create a SOCKET for connecting to server
-        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
-            ptr->ai_protocol);
+        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+        
         if (ConnectSocket == INVALID_SOCKET) 
         {
-            printf("socket failed with error: %d\n", WSAGetLastError());
+            printf(MYTEXT("Socket failed with error: %d\n"), WSAGetLastError());
             WSACleanup();
             return INVALID_SOCKET;
         }
 
-        printf("connecting to %s\n", pcszServerName);
+        printf(MYTEXT("Connecting to %s\n"), pcszServerName);
+        
         // Connect to server.
         iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
         if (iResult == SOCKET_ERROR) 
@@ -55,44 +60,44 @@ SOCKET createSocketAndConnect(PCSTR pcszServerName, PCSTR pcszServiceName)
 
         break;
     }
-    printf("conneced to %s\n", pcszServerName);
-
 
     freeaddrinfo(result);
 
     if (ConnectSocket == INVALID_SOCKET) 
     {
-        printf("Unable to connect to \"%s\"!\n", pcszServerName);
+        printf(MYTEXT("Failed to connect to \"%s\"!\n"), pcszServerName);
         return INVALID_SOCKET;
     }
-
+    
     return ConnectSocket;
 }
 
-HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) {
-    HCRYPTKEY hSesKey = crypto::getSessionKey(hCryptoProv);
-
+HCRYPTKEY exchangeKeys(SOCKET s, HCRYPTPROV hCryptoProv) 
+{    
     std::vector<BYTE> pubKey;
+    
     net::RecvMsg(s, pubKey);
-    printf("Public key received...\n");
+    printf(MYTEXT("Received public key from server\n"));
 
-    printf("\nPublic Key Blob size is %zu\n", pubKey.size());
-    printBytes("Public Key Blob:\n", &pubKey[0], pubKey.size());
+    printf(MYTEXT("Public Key Blob size is %zu\n"), pubKey.size());
+    printBytes("Public Key Blob:\n", pubKey.data(), pubKey.size());
 
-    HCRYPTKEY hImpPubKey = crypto::importKey(hCryptoProv, 0, &pubKey[0], pubKey.size());
+    HCRYPTKEY hImpPubKey = crypto::importKey(hCryptoProv, 0, pubKey.data(), pubKey.size());
 
+    HCRYPTKEY hSesKey = crypto::getSessionKey(hCryptoProv);
     BYTE* pbBlob = NULL;
+
+    printf(MYTEXT("Encrypting session key\n"));
     DWORD dwBlobSize = crypto::exportKey(hSesKey, hImpPubKey, SIMPLEBLOB, &pbBlob);
 
-    std::vector<BYTE> sesKey;
-    sesKey.resize(dwBlobSize);
-    memcpy(&sesKey[0], pbBlob, dwBlobSize);
-    delete [] pbBlob;
-    printf("\nSession Key Blob size is %zu\n", sesKey.size());
-    printBytes("Session Key Blob:\n", &sesKey[0], sesKey.size());
-    printf("Sending session key to server...\n");
-    net::SendMsg(s, sesKey);
+    std::vector<BYTE> sesKey (pbBlob, pbBlob + dwBlobSize);
 
+    printf(MYTEXT("Session Key Blob size is %zu\n"), sesKey.size());
+    printBytes("Session Key Blob:\n", sesKey.data(), sesKey.size());
+    
+    printf(MYTEXT("Sending session key to server...\n"));
+    net::SendMsg(s, sesKey);
+    printf(MYTEXT("Sent session key\n"));
 
     crypto::destroyKey(hImpPubKey);
 
@@ -103,25 +108,40 @@ int main(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        printf("failed to create socket. Please, specify server ip and port number as command line arguments\n");
+        fprintf(stderr, "Wrong parameters\n");
+        fprintf(stderr, "Usage: client.exe <server address> <server port>\n");
         return -1;
     }
 
-    std::ios::sync_with_stdio(true);
+    printf(MYTEXT("Client program\n"));
+    printf(MYTEXT("\tServer address: %s\n"), argv[1]);
+    printf(MYTEXT("\tServer port: %d\n"), atoi(argv[2]));
 
+    printf(MYTEXT("Initialising winsock library...\n"));
     net::initializeWinSock();
+    
+    printf(MYTEXT("Creating socket and connecting to server...\n"));
     SOCKET sock = createSocketAndConnect(argv[1], argv[2]);
+    printf(MYTEXT("Connected to %s\n"), argv[1]);
+    net::PrintSocketInfo(sock, false);
 
+    printf(MYTEXT("Getting keys from CSP [\"Key Containter for Encoding/Decoding\"]...\n"));
+    
     HCRYPTPROV hCryptoProv  = crypto::getCryptoProv(TEXT("Key Containter for Encoding/Decoding"), crypto::ProvType::RSA);
+    
+    printf(MYTEXT("Generating and sending session key to the server...\n"));
     HCRYPTKEY hSesKey = exchangeKeys(sock, hCryptoProv);
+    printf(MYTEXT("Keys have been exchanged\n"));
 
-    while (true)
+    for(;;)
     {
         printf("Enter message: ");
         std::string data;
         std::getline(std::cin, data);
         if (data.size() == 0)
             continue;
+        if (data == "exit")
+            break;
         printf("\n");
         std::vector<BYTE> rawData;
         rawData.resize(data.size());
@@ -137,7 +157,7 @@ int main(int argc, char *argv[])
         crypto::decryptData(hSesKey, &rawData[0], rawData.size());
         data.resize(rawData.size());
         memcpy(&data[0], &rawData[0], rawData.size());
-        printf("\nReceived message: %s\n\n", data.c_str());
+        printf(MYTEXT("\nReceived message: %s\n\n"), data.c_str());
     }
 
     crypto::destroyKey(hSesKey);
