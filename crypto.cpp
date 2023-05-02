@@ -3,12 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <type_traits>
-#undef UNICODE
 #include <tchar.h>
 #include <wincrypt.h>
 
 namespace{
-    
+
     void MyHandleError(LPCTSTR psz)
     {
         _ftprintf(stderr, TEXT("An error occurred in the program. \n"));
@@ -22,17 +21,17 @@ namespace{
 namespace crypto
 {
 
-    HCRYPTPROV getCryptoProv(LPCSTR pszKeyContainerName, ProvType dProvType)
+    HCRYPTPROV getCryptoProv(LPCWSTR pszKeyContainerName, ProvType dProvType)
     {
         (void)dProvType;
-        
+    
         // Handle for the cryptographic provider context.
         HCRYPTPROV hCryptProv = 0;        
-        
+
         // The name of the container.
         if(pszKeyContainerName == nullptr)
             pszKeyContainerName = TEXT("Key Container for Encoding/Decoding");
-    
+
         //---------------------------------------------------------------
         // Begin processing. Attempt to acquire a context by using the 
         // specified key container.
@@ -44,7 +43,7 @@ namespace crypto
             0))
         {
             _tprintf(
-                TEXT("A crypto context with the \"%s\" key container ")
+                TEXT("A crypto context with the \"%ls\" key container ")
                 TEXT("has been acquired.\n"), 
                 pszKeyContainerName);
         }
@@ -128,7 +127,7 @@ namespace crypto
                               TEXT("getting a key.\n"));
             }
         }
-        
+
         _tprintf(TEXT("A key pair existed, or one was ")
                  TEXT("created.\n\n"));
         
@@ -153,15 +152,14 @@ namespace crypto
         return hKey;
     }
 
-    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, ExportKeyType KeyType, BYTE** pbKeyBlob)
+    DWORD exportKey(HCRYPTKEY hKey, HCRYPTKEY hXchgKey, int KeyType, BYTE** pbKeyBlob)
     {
         DWORD dwBlobLen = 0;
-        DWORD dwBlobType = static_cast<std::underlying_type_t<ExportKeyType>>(KeyType);
 
         if(CryptExportKey(
             hKey, 
             hXchgKey, 
-            dwBlobType, 
+            KeyType, 
             0, 
             NULL, 
             &dwBlobLen)) 
@@ -185,7 +183,7 @@ namespace crypto
         if(CryptExportKey(
             hKey, 
             hXchgKey, 
-            dwBlobType, 
+            KeyType, 
             0, 
             *pbKeyBlob, 
             &dwBlobLen))
@@ -196,7 +194,7 @@ namespace crypto
         {
             MyHandleError(TEXT("Error during CryptExportKey."));
         }
-    
+
         return dwBlobLen;
     }
 
@@ -264,3 +262,10 @@ namespace crypto
         return CryptReleaseContext(hCryptProv, 0);
     }
 } /* namespace crypto */
+
+    void printBytes(const char *header, const BYTE *data, size_t size) {
+        printf("%s", header);
+        for(DWORD i = 0; i < size; ++i)
+            printf("%02hhx ", data[i]);
+        printf("\n\n");
+    }
